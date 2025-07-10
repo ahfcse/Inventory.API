@@ -11,4 +11,12 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="DbContext\" />
+    <Folder Include="Middleware\" />
+    <Folder Include="Utilities\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Servoces\" />
+  </ItemGroup>
+
 </Project>
