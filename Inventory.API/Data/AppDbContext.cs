@@ -1,4 +1,5 @@
 ﻿using Inventory.API.Models;
+using Inventory.API.Utilities;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -15,24 +16,49 @@ namespace Inventory.API.Data
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Sale> Sales { get; set; }
         public DbSet<SaleDetail> SaleDetails { get; set; }
+        public DbSet<User> Users { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            // Seed admin user
+            modelBuilder.Entity<User>().HasData(
+                new User
+                {
+                    UserId = 1,
+                    Username = "admin",
+                    PasswordHash = PasswordHasher.HashPassword("admin123"),
+                    Email = "admin@inventory.com",
+                    Role = "Admin",
+                    IsDeleted = false
+                }
+            );
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(u => u.UserId);
+                entity.Property(u => u.Username)
+                    .IsRequired()
+                    .HasMaxLength(50);
 
-            // Apply all configurations from the assembly
-            modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+                entity.HasIndex(u => u.Username)
+                    .IsUnique();
 
-            // Configure entity relationships and constraints
-            ConfigureProductModel(modelBuilder);
-            ConfigureCustomerModel(modelBuilder);
-            ConfigureSaleModels(modelBuilder);
+                entity.Property(u => u.PasswordHash)
+                    .IsRequired()
+                    .HasMaxLength(256);
 
-            // Global query filter for soft delete
-            modelBuilder.Entity<Product>().HasQueryFilter(p => !p.IsDeleted);
-            modelBuilder.Entity<Customer>().HasQueryFilter(c => !c.IsDeleted);
+                entity.Property(u => u.Email)
+                    .HasMaxLength(100);
+
+                entity.Property(u => u.Role)
+                    .HasMaxLength(50)
+                    .HasDefaultValue("User");
+
+                entity.Property(u => u.IsDeleted)
+                    .HasDefaultValue(false);
+            });
         }
-
         private void ConfigureProductModel(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>(entity =>
