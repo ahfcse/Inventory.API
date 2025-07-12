@@ -89,11 +89,6 @@ namespace Inventory.API.Repositories
             throw new NotImplementedException();
         }
 
-        Task<User> IUserRepository.AddUserAsync(User user)
-        {
-            throw new NotImplementedException();
-        }
-
         Task<bool> IUserRepository.UpdateUserAsync(User user)
         {
             throw new NotImplementedException();
