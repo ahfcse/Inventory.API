@@ -1,5 +1,7 @@
-﻿using Inventory.API.Interfaces;
+﻿using Inventory.API.Exceptions;
+using Inventory.API.Interfaces;
 using Inventory.API.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Inventory.API.Repositories
 {
@@ -7,13 +9,14 @@ namespace Inventory.API.Repositories
     public class ProductService : IProductService
     {
         private readonly IUnitOfWork _unitOfWork;
-
-        public ProductService(IUnitOfWork unitOfWork)
+        private readonly ILogger<ProductService> _logger;
+        public ProductService(IUnitOfWork unitOfWork, ILogger<ProductService> logger)
         {
             _unitOfWork = unitOfWork;
+            _logger = logger;
         }
 
-        public async Task<Product> AddProduct(Product product)
+        public async Task<Product> AddProductAsync(Product product)
         {
             // Check for unique barcode using repository
             var existingProduct = (await _unitOfWork.Products.FindAsync(p => p.Barcode == product.Barcode)).FirstOrDefault();
@@ -25,7 +28,7 @@ namespace Inventory.API.Repositories
             return product;
         }
 
-        public async Task<Product> GetProductById(int id)
+        public async Task<Product> GetProductByIdAsync(int id)
         {
             return await _unitOfWork.Products.GetByIdAsync(id);
         }
@@ -51,24 +54,60 @@ namespace Inventory.API.Repositories
             return query.ToList();
         }
 
-        Task<Product> IProductService.AddProductAsync(Product product)
+        public async Task<bool> DeleteProductAsync(int id)
         {
-            throw new NotImplementedException();
-        }
+            // Validate input
+            if (id <= 0)
+            {
+                throw new ArgumentException("Product ID must be greater than zero", nameof(id));
+            }
 
-        Task<bool> IProductService.DeleteProductAsync(int id)
-        {
-            throw new NotImplementedException();
+            try
+            {
+                // Get existing product
+                var product = await _unitOfWork.Products.GetByIdAsync(id);
+
+                // Check if product exists and isn't already deleted
+                if (product == null || product.IsDeleted)
+                {
+                    _logger.LogWarning("Delete failed - Product {ProductId} not found or already deleted", id);
+                    return false;
+                }
+
+                // Soft delete implementation
+                product.IsDeleted = true;
+                product.Status = false; // Optionally mark as inactive
+                _unitOfWork.Products.Update(product);
+
+                // Commit changes
+                int affectedRows = await _unitOfWork.CompleteAsync();
+
+                if (affectedRows > 0)
+                {
+                    _logger.LogInformation("Successfully soft-deleted product {ProductId}", id);
+                    return true;
+                }
+
+                _logger.LogWarning("No rows affected when deleting product {ProductId}", id);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting product {ProductId}", id);
+                throw; // Re-throw for global exception handling
+            }
         }
+    
 
         Task<IEnumerable<Product>> IProductService.GetActiveProductsAsync()
         {
             throw new NotImplementedException();
         }
 
-        Task<IEnumerable<Product>> IProductService.GetAllProductsAsync()
+        public async Task<IEnumerable<Product>> GetAllProductsAsync()
         {
-            throw new NotImplementedException();
+            var query = await _unitOfWork.Products.GetAllAsync();
+            return query.ToList();
         }
 
         Task<Product> IProductService.GetProductByBarcodeAsync(string barcode)
@@ -76,10 +115,7 @@ namespace Inventory.API.Repositories
             throw new NotImplementedException();
         }
 
-        Task<Product> IProductService.GetProductByIdAsync(int id)
-        {
-            throw new NotImplementedException();
-        }
+       
 
         Task<IEnumerable<Product>> IProductService.GetProductsByCategoryAsync(string category)
         {
@@ -96,10 +132,57 @@ namespace Inventory.API.Repositories
             throw new NotImplementedException();
         }
 
-        Task<Product> IProductService.UpdateProductAsync(int id, Product product)
+        public async Task<Product> UpdateProductAsync(int id, Product product)
         {
-            throw new NotImplementedException();
+            // Validate input
+            if (product == null)
+                throw new ArgumentNullException(nameof(product));
+
+            if (id != product.ProductId)
+                throw new ArgumentException("Product ID mismatch");
+
+            // Get existing product
+            var existingProduct = await _unitOfWork.Products.GetByIdAsync(id);
+            if (existingProduct == null || existingProduct.IsDeleted)
+                throw new ProductNotFoundException(id);
+
+            // Validate barcode uniqueness if changed
+            if (existingProduct.Barcode != product.Barcode)
+            {
+                var productWithSameBarcode = (await _unitOfWork.Products.FindAsync(
+                    p => p.Barcode == product.Barcode && !p.IsDeleted))
+                    .FirstOrDefault();
+
+                if (productWithSameBarcode != null && productWithSameBarcode.ProductId != id)
+                    throw new DuplicateBarcodeException(product.Barcode);
+            }
+
+            try
+            {
+                // Update product properties
+                existingProduct.Name = product.Name;
+                existingProduct.Barcode = product.Barcode;
+                existingProduct.Price = product.Price;
+                existingProduct.StockQty = product.StockQty;
+                existingProduct.Category = product.Category;
+                existingProduct.Status = product.Status;
+                existingProduct.IsDeleted = product.IsDeleted;
+
+                _unitOfWork.Products.Update(existingProduct);
+                await _unitOfWork.CompleteAsync();
+
+                _logger.LogInformation("Product {ProductId} updated successfully", id);
+                return existingProduct;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating product {ProductId}", id);
+                throw; // Re-throw for global exception handling
+            }
         }
+
+        // ... other methods ...
+    
 
         Task<bool> IProductService.UpdateStockQuantityAsync(int productId, decimal quantityChange)
         {

@@ -62,7 +62,7 @@ namespace Inventory.API.Controllers
         }
 
         [HttpGet("me")]
-        [Authorize]
+        //[Authorize]
         public IActionResult GetCurrentUserInfo() // Renamed from GetCurrentUser
         {
             var username = User.Identity.Name;
