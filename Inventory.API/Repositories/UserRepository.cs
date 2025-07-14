@@ -73,14 +73,16 @@ namespace Inventory.API.Repositories
             return await _context.SaveChangesAsync() > 0;
         }
 
-        Task<User> IUserRepository.GetByIdAsync(int userId)
+        public async Task<User> GetByIdAsync(int userId)
         {
-            throw new NotImplementedException();
+            return await _context.Users
+                .Where(u => u.UserId == userId && !u.IsDeleted)
+                .FirstOrDefaultAsync();
         }
 
-        Task<IEnumerable<User>> IUserRepository.GetAllAsync()
+        public async Task<IEnumerable<User>> GetAllAsync()
         {
-            throw new NotImplementedException();
+            return  await _context.Users.ToListAsync();
         }
 
 
@@ -89,19 +91,6 @@ namespace Inventory.API.Repositories
             throw new NotImplementedException();
         }
 
-        Task<bool> IUserRepository.UpdateUserAsync(User user)
-        {
-            throw new NotImplementedException();
-        }
 
-        Task<bool> IUserRepository.DeleteUserAsync(int userId)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<bool> IUserRepository.ChangePasswordAsync(int userId, string newPasswordHash)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

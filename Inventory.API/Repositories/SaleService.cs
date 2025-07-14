@@ -14,10 +14,61 @@ namespace Inventory.API.Repositories
         {
             _unitOfWork = unitOfWork;
         }
-
-        public async Task<Sale> CreateSale(Sale sale)
+        public async Task<Sale> CreateSaleAsync(Sale saleDto)
         {
-            if (!await _saleSemaphore.WaitAsync(0))
+            // Validate discount and VAT
+            if (saleDto.DiscountPercentage < 0 || saleDto.DiscountPercentage > 100)
+                throw new ArgumentException("Discount percentage must be between 0 and 100");
+
+            if (saleDto.VatPercentage < 0 || saleDto.VatPercentage > 100)
+                throw new ArgumentException("VAT percentage must be between 0 and 100");
+
+            // Calculate subtotal from sale details
+            var subTotal = saleDto.SaleDetails.Sum(d => d.Quantity * d.Price);
+
+            // Calculate discount (prioritize percentage over fixed amount)
+            decimal discountAmount = 0;
+            if (saleDto.DiscountPercentage > 0)
+            {
+                discountAmount = subTotal * (saleDto.DiscountPercentage / 100);
+            }
+            else
+            {
+                discountAmount = saleDto.DiscountAmount;
+            }
+
+            // Calculate VAT on the discounted amount
+            decimal vatAmount = (subTotal - discountAmount) * (saleDto.VatPercentage / 100);
+
+            // Create sale entity
+            var sale = new Sale
+            {
+                SaleDate = DateTime.UtcNow,
+                CustomerId = saleDto.CustomerId,
+                SubTotal = subTotal,
+                DiscountPercentage = saleDto.DiscountPercentage,
+                DiscountAmount = discountAmount,
+                VatPercentage = saleDto.VatPercentage,
+                VatAmount = vatAmount,
+                TotalAmount = subTotal - discountAmount + vatAmount,
+                PaidAmount = saleDto.PaidAmount,
+                DueAmount = saleDto.DueAmount,
+                SaleDetails = saleDto.SaleDetails.Select(d => new SaleDetail
+                {
+                    ProductId = d.ProductId,
+                    Quantity = d.Quantity,
+                    Price = d.Price
+                }).ToList()
+            };
+
+            // Process sale (validate stock, save to DB, etc.)
+            await ProcessSaleAsync(sale);
+
+            return sale;
+        }
+        public async Task<Sale> ProcessSaleAsync(Sale sale)
+        {
+            if (!await _saleSemaphore.WaitAsync(0))// Limit to 3 concurrent
                 throw new TooManyRequestsException();
 
             try
@@ -51,7 +102,7 @@ namespace Inventory.API.Repositories
             }
         }
 
-        public async Task<SalesReport> GetSalesReport(DateTime from, DateTime to)
+        public async Task<SalesReport> GetSalesReportAsync(DateTime from, DateTime to)
         {
             var sales = await _unitOfWork.Sales.FindAsync(s =>
                 s.SaleDate >= from && s.SaleDate <= to);
@@ -64,24 +115,16 @@ namespace Inventory.API.Repositories
             };
         }
 
-        Task<Sale> ISaleService.GetSaleByIdAsync(int id)
+        public async Task<Sale> GetSaleByIdAsync(int id)
         {
-            throw new NotImplementedException();
+            var sales = await _unitOfWork.Sales.GetByIdAsync(id);
+            return sales;
         }
 
-        Task<IEnumerable<Sale>> ISaleService.GetAllSalesAsync()
+        public async Task<IEnumerable<Sale>> GetAllSalesAsync()
         {
-            throw new NotImplementedException();
-        }
-
-        Task<Sale> ISaleService.CreateSaleAsync(Sale sale)
-        {
-            throw new NotImplementedException();
-        }
-
-        Task<SalesReport> ISaleService.GetSalesReportAsync(DateTime fromDate, DateTime toDate)
-        {
-            throw new NotImplementedException();
+            var sales = await _unitOfWork.Sales.GetAllAsync();
+            return sales;
         }
 
         Task<IEnumerable<Sale>> ISaleService.GetSalesByDateRangeAsync(DateTime startDate, DateTime endDate)
@@ -89,9 +132,10 @@ namespace Inventory.API.Repositories
             throw new NotImplementedException();
         }
 
-        Task<IEnumerable<Sale>> ISaleService.GetSalesByCustomerAsync(int customerId)
+        public async Task<IEnumerable<Sale>> GetSalesByCustomerAsync(int customerId)
         {
-            throw new NotImplementedException();
+            var sales = await _unitOfWork.Sales.GetSalesByCustomerAsync(customerId);
+            return sales;
         }
 
         Task<decimal> ISaleService.GetTotalRevenueAsync(DateTime? fromDate, DateTime? toDate)

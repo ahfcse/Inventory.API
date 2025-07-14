@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Inventory.API.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class SalesController : ControllerBase
@@ -35,15 +35,17 @@ namespace Inventory.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateSale([FromBody] Sale sale)
+        public async Task<IActionResult> CreateSale([FromBody] Sale saleDto)
         {
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             try
             {
-                var createdSale = await _saleService.CreateSaleAsync(sale);
-                return CreatedAtAction(nameof(GetSale), new { id = createdSale.SaleId }, createdSale);
+                var sale = await _saleService.CreateSaleAsync(saleDto);
+                return CreatedAtAction(nameof(GetSale), new { id = sale.SaleId }, sale);
             }
             catch (Exception ex)
             {

@@ -37,5 +37,10 @@ namespace Inventory.API.Repositories
 
         public async Task<int> CountAsync(Expression<Func<T, bool>> predicate = null)
             => predicate == null ? await _dbSet.CountAsync() : await _dbSet.CountAsync(predicate);
+
+        public Task<IEnumerable<T>> GetSalesByCustomerAsync(int customerId)
+        {
+            return FindAsync(s => EF.Property<int>(s, "CustomerId") == customerId);
+        }
     }
 }

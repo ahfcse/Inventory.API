@@ -133,11 +133,6 @@ namespace Inventory.API.Data
                 entity.Property(s => s.DueAmount)
                     .HasColumnType("decimal(18,2)");
 
-                // Relationship with Customer
-                entity.HasOne(s => s.Customer)
-                    .WithMany()
-                    .HasForeignKey(s => s.CustomerId)
-                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<SaleDetail>(entity =>
@@ -151,16 +146,7 @@ namespace Inventory.API.Data
                     .HasColumnType("decimal(18,2)");
 
                 // Relationship with Sale
-                entity.HasOne(sd => sd.Sale)
-                    .WithMany(s => s.SaleDetails)
-                    .HasForeignKey(sd => sd.SaleId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                // Relationship with Product
-                entity.HasOne(sd => sd.Product)
-                    .WithMany()
-                    .HasForeignKey(sd => sd.ProductId)
-                    .OnDelete(DeleteBehavior.Restrict);
+              
             });
         }
 

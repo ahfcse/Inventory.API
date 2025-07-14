@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Inventory.API.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [ApiController]
     [Route("api/[controller]/[action]")]
     public class ProductsController : ControllerBase
@@ -35,7 +35,7 @@ namespace Inventory.API.Controllers
         }
 
         [HttpPost]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
         {
             if (!ModelState.IsValid)
@@ -46,7 +46,7 @@ namespace Inventory.API.Controllers
         }
 
         [HttpPut("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] Product product)
         {
             if (id != product.ProductId)
@@ -60,7 +60,7 @@ namespace Inventory.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        //[Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             var result = await _productService.DeleteProductAsync(id);
@@ -70,11 +70,5 @@ namespace Inventory.API.Controllers
             return NoContent();
         }
 
-        //[HttpGet("search")]
-        //public async Task<IActionResult> SearchProducts([FromQuery] string category, [FromQuery] bool? status)
-        //{
-        //    var products = await _productService.GetProductsByCategoryAsync(category, status);
-        //    return Ok(products);
-        //}
     }
 }

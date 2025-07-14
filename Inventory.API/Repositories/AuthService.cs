@@ -58,7 +58,7 @@ namespace Inventory.API.Repositories
                 _configuration["Jwt:Issuer"],
                 _configuration["Jwt:Audience"],
                 claims,
-                expires: DateTime.Now.AddMinutes(15),
+                expires: DateTime.Now.AddMinutes(1000),
                 signingCredentials: credentials);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
