@@ -33,7 +33,7 @@ Installation
      dotnet ef database update
 
 4. Run the application:
-   dotnet run
+   Click Inventory.API.sln and run the project by clicking MyApiProject
 
 5. Access Swagger UI at:
   http://localhost:5245/swagger/index.html
