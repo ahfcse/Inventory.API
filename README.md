@@ -28,7 +28,7 @@ Installation
 
 2. Configure the database:
    - Update connection string in appsettings.json
-   - Run migrations:
+   - Run migrations Or Execute attached(InventoryDB.sql) script manually.
      dotnet ef database update
 
 3. Run the application:
