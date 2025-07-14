@@ -3,6 +3,8 @@ Inventory Management API - README
 Overview
 This API provides a complete inventory management system with product, customer, and sales tracking capabilities, including JWT authentication, concurrent sales limiting, and discount/VAT calculations.
 
+Technology Used: Dot net 9 Web API AND SQL SERVER
+
 Table of Contents
 - Setup Instructions
 - Configuration
@@ -14,25 +16,27 @@ Table of Contents
 SETUP INSTRUCTIONS
 
 Prerequisites
-- .NET 7.0 SDK
+- Visual Studio 2022
+- .NET 9.0 SDK.
 - SQL Server 2019+
 - Redis (optional, for distributed rate limiting)
 
 Installation
 1. Clone the repository:
-   git clone https://github.com/your-repo/inventory-api.git
-   cd inventory-api
+   git clone https://github.com/ahfcse/Inventory.API.git
+   
+   cd Inventory.API
 
-2. Configure the database:
+3. Configure the database:
    - Update connection string in appsettings.json
-   - Run migrations:
+   - Run migrations Or Execute attached(InventoryDB.sql) script manually.
      dotnet ef database update
 
-3. Run the application:
-   dotnet run
+4. Run the application:
+   Click Inventory.API.sln and run the project by clicking MyApiProject
 
-4. Access Swagger UI at:
-   https://localhost:5001/swagger
+5. Access Swagger UI at:
+  http://localhost:5245/swagger/index.html
 
 CONFIGURATION
 
@@ -46,23 +50,24 @@ Jwt__ExpiryInMinutes           Token expiration                        60
 
 appsettings.json
 {
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=Your SErver Name;Database=InventoryDB;User Id=Your User Id;Password=Your Password;TrustServerCertificate=true"
+  },
+  "Jwt": {
+    "Key": "YourSuperSecretKeyHereAtLeast32CharactersLong",
+    "Issuer": "InventoryAPI",
+    "Audience": "InventoryAppClient",
+    "ExpiryInMinutes": 1000
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Information",
       "Microsoft.AspNetCore": "Warning"
     }
   },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=InventoryDB;Trusted_Connection=True;"
-  },
-  "Jwt": {
-    "Key": "your_secure_key_at_least_32_characters",
-    "Issuer": "InventoryAPI",
-    "Audience": "InventoryApp",
-    "ExpiryInMinutes": 60
-  }
+  "AllowedHosts": "*"
 }
+
 
 AUTHENTICATION
 
@@ -80,32 +85,32 @@ Obtaining a Token
    }
 
 2. Use the returned token in subsequent requests:
-   Authorization: Bearer <your_token>
+   Authorization: Bearer <your_token> and Authorize it top right Click on Authorize button , Paste and Submit.
 
 API ENDPOINTS
 
 Products
 Method  Endpoint                Description
-GET     /api/products           Get all products
-GET     /api/products/{id}      Get product by ID
-POST    /api/products           Create new product
-PUT     /api/products/{id}      Update product
-DELETE  /api/products/{id}      Delete product
+GET     /api/Products/GetAllProducts          Get all products
+GET     /api/Products/GetProduct/{id}      Get product by ID
+POST    /api/Products/CreateProduct         Create new product
+PUT     /api/Products/UpdateProduct/{id}      Update product
+DELETE  /api/Products/DeleteProduct/{id}      Delete product
 
 Customers
 Method  Endpoint                Description
-GET     /api/customers          Get all customers
-GET     /api/customers/{id}     Get customer by ID
-POST    /api/customers          Create new customer
-PUT     /api/customers/{id}     Update customer
-DELETE  /api/customers/{id}     Delete customer
+GET     /api/Customers/GetAllCustomers          Get all customers
+GET     /api/Customers/GetAllCustomers     Get customer by ID
+POST    /api/Customers/CreateCustomer          Create new customer
+PUT     /api/Customers/UpdateCustomer/{id}     Update customer
+DELETE  /api/Customers/DeleteCustomer/{id}     Delete customer
 
 Sales
 Method  Endpoint                Description
-GET     /api/sales              Get all sales
-GET     /api/sales/{id}         Get sale by ID
-POST    /api/sales              Create new sale
-GET     /api/sales/report       Get sales report
+GET     /api/Sales/GetAllSales              Get all sales
+GET     /api/Sales/GetSale/{id}         Get sale by ID
+POST    /api/Sales/CreateSale              Create new sale
+GET     /api/Sales/GetSalesReport/report       Get sales report
 
 RATE LIMITING
 - Global limit of 3 concurrent sales requests
@@ -115,7 +120,7 @@ RATE LIMITING
 SAMPLE REQUESTS
 
 1. Login
-curl -X POST "https://localhost:5001/api/auth/login" \
+curl -X POST "https://localhost:5245/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{
     "username": "admin",
@@ -123,24 +128,24 @@ curl -X POST "https://localhost:5001/api/auth/login" \
   }'
 
 2. Get Current User
-curl -X GET "https://localhost:5001/api/auth/me" \
+curl -X GET "https://localhost:5245/api/auth/me" \
   -H "Authorization: Bearer <your_token>"
 
 3. Create Product
-curl -X POST "https://localhost:5001/api/products" \
+curl -X POST "http://localhost:5245/api/Products/CreateProduct" \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "Wireless Mouse",
-    "barcode": "MOUSE123",
-    "price": 24.99,
+    "name": "Wireless Mouse 2",
+    "barcode": "MOUSE124",
+    "price": 25.99,
     "stockQty": 50,
     "category": "Computer Accessories",
     "status": true
   }'
 
 4. Create Sale with Discount/VAT
-curl -X POST "https://localhost:5001/api/sales" \
+curl -X POST "http://localhost:5245/api/Sales/CreateSale" \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -158,11 +163,11 @@ curl -X POST "https://localhost:5001/api/sales" \
   }'
 
 5. Get Sales Report
-curl -X GET "https://localhost:5001/api/sales/report?fromDate=2023-01-01&toDate=2023-12-31" \
+curl -X GET "[https://localhost:5001/api/sales/report?fromDate=2023-01-01&toDate=2023-12-31](http://localhost:5245/api/Sales/GetSalesReport/report?fromDate=2025-07-12&toDate=2025-07-15')" \
   -H "Authorization: Bearer <your_token>"
 
 6. Test Concurrent Sales Limiter
-curl -X POST "https://localhost:5001/api/sales" \
+curl -X POST "http://localhost:5245/api/Sales/CreateSale" \
   -H "Authorization: Bearer <your_token>" \
   -H "Content-Type: application/json" \
   -d '{
