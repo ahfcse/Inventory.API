@@ -3,6 +3,8 @@ Inventory Management API - README
 Overview
 This API provides a complete inventory management system with product, customer, and sales tracking capabilities, including JWT authentication, concurrent sales limiting, and discount/VAT calculations.
 
+Technology Used: Dot net 9 Web API AND SQL SERVER
+
 Table of Contents
 - Setup Instructions
 - Configuration
@@ -14,7 +16,8 @@ Table of Contents
 SETUP INSTRUCTIONS
 
 Prerequisites
-- .NET 7.0 SDK
+- Visual Studio 2022
+- .NET 9.0 SDK.
 - SQL Server 2019+
 - Redis (optional, for distributed rate limiting)
 
