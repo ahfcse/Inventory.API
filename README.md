@@ -24,17 +24,18 @@ Prerequisites
 Installation
 1. Clone the repository:
    git clone https://github.com/ahfcse/Inventory.API.git
+   
    cd Inventory.API
 
-2. Configure the database:
+3. Configure the database:
    - Update connection string in appsettings.json
    - Run migrations Or Execute attached(InventoryDB.sql) script manually.
      dotnet ef database update
 
-3. Run the application:
+4. Run the application:
    dotnet run
 
-4. Access Swagger UI at:
+5. Access Swagger UI at:
   http://localhost:5245/swagger/index.html
 
 CONFIGURATION
